@@ -3,6 +3,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+RESULTADOS_DIR = os.path.join(BASE_DIR, "..", "resultados")
+os.makedirs(RESULTADOS_DIR, exist_ok=True)
+
 # -----------------------------
 # 1. SIMULAÇÃO DE DADOS (BASE REALISTA)
 # -----------------------------
@@ -94,7 +98,7 @@ plt.scatter(df["royalties_per_capita"], df["indice_social"])
 plt.xlabel("Royalties per capita")
 plt.ylabel("Índice Social")
 plt.title("Royalties vs Qualidade de Vida")
-plt.savefig("resultados/scatter_royalties_vs_social.png")
+plt.savefig(os.path.join(RESULTADOS_DIR, "scatter_royalties_vs_social.png"))
 plt.close()
 
 # Evolução de município
@@ -106,7 +110,7 @@ plt.plot(df_cidade["ano"], df_cidade["royalties_per_capita"])
 plt.xlabel("Ano")
 plt.ylabel("Royalties per capita")
 plt.title(f"Evolução - {cidade_exemplo}")
-plt.savefig("resultados/evolucao_municipio.png")
+plt.savefig(os.path.join(RESULTADOS_DIR, "evolucao_municipio.png"))
 plt.close()
 
 # Ranking
@@ -114,7 +118,7 @@ plt.figure()
 media_municipios["royalties_per_capita"].sort_values().plot(kind="bar")
 plt.title("Royalties per capita médio por município")
 plt.xticks(rotation=45)
-plt.savefig("resultados/ranking_municipios.png")
+plt.savefig(os.path.join(RESULTADOS_DIR, "ranking_municipios.png"))
 plt.close()
 
 # -----------------------------
