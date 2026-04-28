@@ -125,7 +125,7 @@ plt.close()
 # 7. EXPORTAR DADOS
 # -----------------------------
 
-df.to_csv("resultados/base_tratada.csv", index=False)
+df.to_csv(os.path.join(RESULTADOS_DIR, "base_tratada.csv"), index=False)
 
 # -----------------------------
 # 8. INSIGHT AUTOMÁTICO
