@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 # -----------------------------
 # 1. SIMULAÇÃO DE DADOS (BASE REALISTA)
@@ -19,89 +20,118 @@ anos = list(range(2015, 2023))
 data = []
 
 for m in municipios:
-    base_royalty = np.random.uniform(50, 500)
+    base_royalty = np.random.uniform(50_000_000, 800_000_000)
     
     for ano in anos:
         royalties = base_royalty * np.random.uniform(0.8, 1.2)
         
-        renda = np.random.uniform(500, 1500) + royalties * 0.5
+        renda = np.random.uniform(800, 2500)
         educacao = np.random.uniform(0.4, 0.9)
         saneamento = np.random.uniform(0.3, 0.95)
+        populacao = np.random.randint(50000, 500000)
         
-        data.append([m, ano, royalties, renda, educacao, saneamento])
+        data.append([m, ano, royalties, renda, educacao, saneamento, populacao])
 
 df = pd.DataFrame(data, columns=[
-    "municipio", "ano", "royalties", "renda", "educacao", "saneamento"
+    "municipio", "ano", "royalties", "renda",
+    "educacao", "saneamento", "populacao"
 ])
 
 # -----------------------------
-# 2. ETL (LIMPEZA E PREPARAÇÃO)
+# 2. ETL (LIMPEZA)
 # -----------------------------
 
-# Padronização
-df["municipio"] = df["municipio"].str.upper()
-
-# Verificar nulos
-print("Valores nulos:\n", df.isnull().sum())
+df["municipio"] = df["municipio"].str.upper().str.strip()
 
 # -----------------------------
-# 3. ANÁLISE EXPLORATÓRIA
+# 3. FEATURE ENGINEERING
 # -----------------------------
 
-print("\nResumo estatístico:\n", df.describe())
+df["royalties_per_capita"] = df["royalties"] / df["populacao"]
 
-# Média por município
+df["indice_social"] = (
+    df["renda"] +
+    df["educacao"] * 1000 +
+    df["saneamento"] * 1000
+) / 3
+
+# -----------------------------
+# 4. ANÁLISE
+# -----------------------------
+
+print("\nResumo estatístico:\n")
+print(df.describe())
+
 media_municipios = df.groupby("municipio").mean(numeric_only=True)
 
-print("\nMédia por município:\n", media_municipios)
+print("\nMédia por município:\n")
+print(media_municipios)
+
+correlacao = df[[
+    "royalties_per_capita",
+    "renda",
+    "educacao",
+    "saneamento",
+    "indice_social"
+]].corr()
+
+print("\nCorrelação:\n")
+print(correlacao)
 
 # -----------------------------
-# 4. CORRELAÇÃO
+# 5. CRIAR PASTA RESULTADOS
 # -----------------------------
 
-correlacao = df[["royalties", "renda", "educacao", "saneamento"]].corr()
-
-print("\nCorrelação:\n", correlacao)
+os.makedirs("resultados", exist_ok=True)
 
 # -----------------------------
-# 5. GRÁFICOS
+# 6. GRÁFICOS
 # -----------------------------
 
-# 5.1 Scatter plot: royalties vs renda
+# Scatter principal
 plt.figure()
-plt.scatter(df["royalties"], df["renda"])
-plt.xlabel("Royalties")
-plt.ylabel("Renda")
-plt.title("Royalties vs Renda")
-plt.show()
+plt.scatter(df["royalties_per_capita"], df["indice_social"])
+plt.xlabel("Royalties per capita")
+plt.ylabel("Índice Social")
+plt.title("Royalties vs Qualidade de Vida")
+plt.savefig("resultados/scatter_royalties_vs_social.png")
+plt.close()
 
-# 5.2 Evolução dos royalties (exemplo de 1 município)
+# Evolução de município
 cidade_exemplo = "MACAÉ"
-
 df_cidade = df[df["municipio"] == cidade_exemplo]
 
 plt.figure()
-plt.plot(df_cidade["ano"], df_cidade["royalties"])
+plt.plot(df_cidade["ano"], df_cidade["royalties_per_capita"])
 plt.xlabel("Ano")
-plt.ylabel("Royalties")
-plt.title(f"Evolução dos Royalties - {cidade_exemplo}")
-plt.show()
+plt.ylabel("Royalties per capita")
+plt.title(f"Evolução - {cidade_exemplo}")
+plt.savefig("resultados/evolucao_municipio.png")
+plt.close()
 
-# 5.3 Comparação média de royalties por município
+# Ranking
 plt.figure()
-media_municipios["royalties"].sort_values().plot(kind="bar")
-plt.title("Royalties Médios por Município")
-plt.ylabel("Royalties")
+media_municipios["royalties_per_capita"].sort_values().plot(kind="bar")
+plt.title("Royalties per capita médio por município")
 plt.xticks(rotation=45)
-plt.show()
+plt.savefig("resultados/ranking_municipios.png")
+plt.close()
 
 # -----------------------------
-# 6. INSIGHT SIMPLES
+# 7. EXPORTAR DADOS
 # -----------------------------
 
-print("\nInsight básico:")
+df.to_csv("resultados/base_tratada.csv", index=False)
 
-if correlacao.loc["royalties", "renda"] > 0.5:
-    print("Existe forte relação positiva entre royalties e renda.")
+# -----------------------------
+# 8. INSIGHT AUTOMÁTICO
+# -----------------------------
+
+print("\nInsight:")
+
+if correlacao.loc["royalties_per_capita", "indice_social"] > 0.5:
+    print("Existe relação positiva entre royalties e qualidade de vida.")
 else:
-    print("Não há relação forte entre royalties e renda.")
+    print("Relação fraca: possível ineficiência na alocação dos royalties.")
+
+print("\nArquivos gerados na pasta 'resultados/'")
